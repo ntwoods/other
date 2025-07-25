@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Cheque Response System</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles for the blue theme */
@@ -189,29 +188,24 @@
         <h1 class="text-3xl font-bold text-center mb-8 text-primary-blue">Security Cheque Response Form</h1>
 
         <form id="chequeForm" class="space-y-6">
-            <!-- Date -->
             <div>
                 <label for="date" class="form-label">Date:</label>
                 <input type="date" id="date" name="date" class="form-input" required>
             </div>
 
-            <!-- Dealer/Firm Name -->
             <div>
                 <label for="dealerName" class="form-label">Dealer/Firm Name:</label>
                 <input type="text" id="dealerName" name="dealerName" class="form-input" placeholder="Enter Dealer/Firm Name" required>
             </div>
 
-            <!-- Marketing Person -->
             <div>
                 <label for="marketingPerson" class="form-label">Marketing Person:</label>
                 <input type="text" id="marketingPerson" name="marketingPerson" class="form-input" placeholder="Enter Marketing Person's Name" required>
             </div>
 
-            <!-- Cheque Number Grid -->
             <div>
                 <label class="form-label mb-2">Cheque Numbers:</label>
                 <div id="chequeNumbersContainer" class="space-y-4 mb-4">
-                    <!-- Initial Cheque Number Input -->
                     <div class="flex items-center gap-4 cheque-input-group">
                         <label for="chequeNumber_1" class="w-32 text-dark-blue">Cheque Number 1:</label>
                         <input type="text" id="chequeNumber_1" name="chequeNumber_1" class="form-input flex-grow" placeholder="Enter Cheque Number" required>
@@ -221,32 +215,28 @@
                 <button type="button" id="addChequeField" class="btn btn-secondary">Add Cheque Number</button>
             </div>
 
-            <!-- Cheque Image Attachments -->
             <div>
                 <label for="chequeImages" class="file-input-label">Cheque Images:</label>
-                <div class="file-input-wrapper">
+                <div class="file-input-wrapper" id="chequeImagesWrapper">
                     <input type="file" id="chequeImages" name="chequeImages" multiple accept="image/*">
                     <p class="text-gray-500">Drag & Drop or Click to Upload Cheque Images</p>
                 </div>
                 <div id="chequeImagePreview" class="file-list"></div>
             </div>
 
-            <!-- Form Image Attachments -->
             <div>
                 <label for="formImages" class="file-input-label">Form Images:</label>
-                <div class="file-input-wrapper">
+                <div class="file-input-wrapper" id="formImagesWrapper">
                     <input type="file" id="formImages" name="formImages" multiple accept="image/*">
                     <p class="text-gray-500">Drag & Drop or Click to Upload Form Images</p>
                 </div>
                 <div id="formImagePreview" class="file-list"></div>
             </div>
 
-            <!-- Submit Button -->
             <div class="flex justify-center mt-8">
                 <button type="submit" class="btn btn-primary w-full md:w-auto">Submit Cheque Data</button>
             </div>
 
-            <!-- Message Box for feedback -->
             <div id="messageBox" class="message-box hidden"></div>
         </form>
     </div>
@@ -321,8 +311,8 @@
         }
 
         // Function to handle file input change and display previews
-        async function handleFileChange(event, previewContainerId) {
-            const files = event.target.files;
+        async function handleFileChange(inputElement, previewContainerId) {
+            const files = inputElement.files;
             const previewContainer = document.getElementById(previewContainerId);
             // Clear previous previews
             previewContainer.innerHTML = '';
@@ -343,24 +333,36 @@
             previewContainer.querySelectorAll('.remove-file').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const fileNameToRemove = e.target.dataset.fileName;
-                    const inputElement = e.target.closest('div.file-tag').parentElement.previousElementSibling.querySelector('input[type="file"]');
+                    // Find the correct file input associated with this preview container
+                    const targetInputId = previewContainerId === 'chequeImagePreview' ? 'chequeImages' : 'formImages';
+                    const targetInput = document.getElementById(targetInputId);
                     
                     // Create a new DataTransfer object to modify the file list
                     const dataTransfer = new DataTransfer();
-                    Array.from(inputElement.files)
+                    Array.from(targetInput.files)
                         .filter(file => file.name !== fileNameToRemove)
                         .forEach(file => dataTransfer.items.add(file));
                     
-                    inputElement.files = dataTransfer.files;
+                    targetInput.files = dataTransfer.files;
                     // Re-trigger the change event to update the UI
-                    handleFileChange({ target: inputElement }, previewContainerId);
+                    handleFileChange(targetInput, previewContainerId);
                 });
             });
         }
 
         // Event listeners for file inputs
-        document.getElementById('chequeImages').addEventListener('change', (e) => handleFileChange(e, 'chequeImagePreview'));
-        document.getElementById('formImages').addEventListener('change', (e) => handleFileChange(e, 'formImagePreview'));
+        document.getElementById('chequeImages').addEventListener('change', (e) => handleFileChange(e.target, 'chequeImagePreview'));
+        document.getElementById('formImages').addEventListener('change', (e) => handleFileChange(e.target, 'formImagePreview'));
+
+        // Event listeners for clicking on the file input wrappers
+        document.getElementById('chequeImagesWrapper').addEventListener('click', () => {
+            document.getElementById('chequeImages').click();
+        });
+
+        document.getElementById('formImagesWrapper').addEventListener('click', () => {
+            document.getElementById('formImages').click();
+        });
+
 
         // Handle form submission
         document.getElementById('chequeForm').addEventListener('submit', async function(event) {
