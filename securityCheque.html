@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Cheque Response System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the blue theme */
+        :root {
+            --primary-blue: #3B82F6; /* Tailwind blue-500 */
+            --light-blue: #BFDBFE;   /* Tailwind blue-200 */
+            --dark-blue: #1E40AF;    /* Tailwind blue-800 */
+            --white: #FFFFFF;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--gray-100);
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: var(--white);
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600; /* font-semibold */
+            color: var(--dark-blue);
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 0.5rem; /* rounded-lg */
+            background-color: var(--white);
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* blue-300 focus ring */
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 600; /* font-semibold */
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-blue);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--dark-blue);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: var(--light-blue);
+            color: var(--dark-blue);
+            border: 1px solid var(--primary-blue);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-blue);
+            color: var(--white);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background-color: #EF4444; /* Tailwind red-500 */
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background-color: #DC2626; /* Tailwind red-600 */
+            transform: translateY(-1px);
+        }
+
+        .file-input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark-blue);
+        }
+
+        .file-input-wrapper {
+            border: 2px dashed var(--gray-300);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s ease-in-out;
+        }
+
+        .file-input-wrapper:hover {
+            border-color: var(--primary-blue);
+        }
+
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .file-tag {
+            background-color: var(--light-blue);
+            color: var(--dark-blue);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            position: relative;
+        }
+
+        .file-tag .remove-file {
+            background: none;
+            border: none;
+            color: var(--dark-blue);
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .message-box.success {
+            background-color: #D1FAE5; /* Tailwind green-100 */
+            color: #065F46; /* Tailwind green-800 */
+        }
+
+        .message-box.error {
+            background-color: #FEE2E2; /* Tailwind red-100 */
+            color: #991B1B; /* Tailwind red-800 */
+        }
+
+        .message-box.loading {
+            background-color: #DBEAFE; /* Tailwind blue-100 */
+            color: #1E40AF; /* Tailwind blue-800 */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-8 text-primary-blue">Security Cheque Response Form</h1>
+
+        <form id="chequeForm" class="space-y-6">
+            <!-- Date -->
+            <div>
+                <label for="date" class="form-label">Date:</label>
+                <input type="date" id="date" name="date" class="form-input" required>
+            </div>
+
+            <!-- Dealer/Firm Name -->
+            <div>
+                <label for="dealerName" class="form-label">Dealer/Firm Name:</label>
+                <input type="text" id="dealerName" name="dealerName" class="form-input" placeholder="Enter Dealer/Firm Name" required>
+            </div>
+
+            <!-- Marketing Person -->
+            <div>
+                <label for="marketingPerson" class="form-label">Marketing Person:</label>
+                <input type="text" id="marketingPerson" name="marketingPerson" class="form-input" placeholder="Enter Marketing Person's Name" required>
+            </div>
+
+            <!-- Cheque Number Grid -->
+            <div>
+                <label class="form-label mb-2">Cheque Numbers:</label>
+                <div id="chequeNumbersContainer" class="space-y-4 mb-4">
+                    <!-- Initial Cheque Number Input -->
+                    <div class="flex items-center gap-4 cheque-input-group">
+                        <label for="chequeNumber_1" class="w-32 text-dark-blue">Cheque Number 1:</label>
+                        <input type="text" id="chequeNumber_1" name="chequeNumber_1" class="form-input flex-grow" placeholder="Enter Cheque Number" required>
+                        <button type="button" class="btn btn-danger remove-cheque-btn hidden" onclick="removeChequeField(this)">Remove</button>
+                    </div>
+                </div>
+                <button type="button" id="addChequeField" class="btn btn-secondary">Add Cheque Number</button>
+            </div>
+
+            <!-- Cheque Image Attachments -->
+            <div>
+                <label for="chequeImages" class="file-input-label">Cheque Images:</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="chequeImages" name="chequeImages" multiple accept="image/*">
+                    <p class="text-gray-500">Drag & Drop or Click to Upload Cheque Images</p>
+                </div>
+                <div id="chequeImagePreview" class="file-list"></div>
+            </div>
+
+            <!-- Form Image Attachments -->
+            <div>
+                <label for="formImages" class="file-input-label">Form Images:</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="formImages" name="formImages" multiple accept="image/*">
+                    <p class="text-gray-500">Drag & Drop or Click to Upload Form Images</p>
+                </div>
+                <div id="formImagePreview" class="file-list"></div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-center mt-8">
+                <button type="submit" class="btn btn-primary w-full md:w-auto">Submit Cheque Data</button>
+            </div>
+
+            <!-- Message Box for feedback -->
+            <div id="messageBox" class="message-box hidden"></div>
+        </form>
+    </div>
+
+    <script>
+        let chequeFieldCount = 1;
+
+        // Function to add a new cheque number input field
+        function addChequeField() {
+            chequeFieldCount++;
+            const container = document.getElementById('chequeNumbersContainer');
+            const newDiv = document.createElement('div');
+            newDiv.className = 'flex items-center gap-4 cheque-input-group';
+            newDiv.innerHTML = `
+                <label for="chequeNumber_${chequeFieldCount}" class="w-32 text-dark-blue">Cheque Number ${chequeFieldCount}:</label>
+                <input type="text" id="chequeNumber_${chequeFieldCount}" name="chequeNumber_${chequeFieldCount}" class="form-input flex-grow" placeholder="Enter Cheque Number" required>
+                <button type="button" class="btn btn-danger remove-cheque-btn" onclick="removeChequeField(this)">Remove</button>
+            `;
+            container.appendChild(newDiv);
+            updateRemoveButtonsVisibility();
+        }
+
+        // Function to remove a cheque number input field
+        function removeChequeField(button) {
+            const group = button.closest('.cheque-input-group');
+            group.remove();
+            chequeFieldCount--;
+            // Re-index remaining fields and update labels/names
+            const remainingFields = document.querySelectorAll('.cheque-input-group');
+            remainingFields.forEach((field, index) => {
+                const newIndex = index + 1;
+                field.querySelector('label').textContent = `Cheque Number ${newIndex}:`;
+                const input = field.querySelector('input');
+                input.id = `chequeNumber_${newIndex}`;
+                input.name = `chequeNumber_${newIndex}`;
+            });
+            updateRemoveButtonsVisibility();
+        }
+
+        // Function to update visibility of remove buttons
+        function updateRemoveButtonsVisibility() {
+            const removeButtons = document.querySelectorAll('.remove-cheque-btn');
+            if (chequeFieldCount === 1) {
+                removeButtons.forEach(btn => btn.classList.add('hidden'));
+            } else {
+                removeButtons.forEach(btn => btn.classList.remove('hidden'));
+            }
+        }
+
+        // Event listener for adding cheque fields
+        document.getElementById('addChequeField').addEventListener('click', addChequeField);
+
+        // Initial call to set up remove button visibility
+        updateRemoveButtonsVisibility();
+
+        // Helper to display messages
+        function showMessage(message, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`;
+            messageBox.classList.remove('hidden');
+        }
+
+        // Function to read a file as base64
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Function to handle file input change and display previews
+        async function handleFileChange(event, previewContainerId) {
+            const files = event.target.files;
+            const previewContainer = document.getElementById(previewContainerId);
+            // Clear previous previews
+            previewContainer.innerHTML = '';
+
+            if (files.length === 0) return;
+
+            for (const file of files) {
+                const fileTag = document.createElement('div');
+                fileTag.className = 'file-tag';
+                fileTag.innerHTML = `
+                    <span>${file.name}</span>
+                    <button type="button" class="remove-file" data-file-name="${file.name}">&times;</button>
+                `;
+                previewContainer.appendChild(fileTag);
+            }
+
+            // Attach event listeners for removing files
+            previewContainer.querySelectorAll('.remove-file').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const fileNameToRemove = e.target.dataset.fileName;
+                    const inputElement = e.target.closest('div.file-tag').parentElement.previousElementSibling.querySelector('input[type="file"]');
+                    
+                    // Create a new DataTransfer object to modify the file list
+                    const dataTransfer = new DataTransfer();
+                    Array.from(inputElement.files)
+                        .filter(file => file.name !== fileNameToRemove)
+                        .forEach(file => dataTransfer.items.add(file));
+                    
+                    inputElement.files = dataTransfer.files;
+                    // Re-trigger the change event to update the UI
+                    handleFileChange({ target: inputElement }, previewContainerId);
+                });
+            });
+        }
+
+        // Event listeners for file inputs
+        document.getElementById('chequeImages').addEventListener('change', (e) => handleFileChange(e, 'chequeImagePreview'));
+        document.getElementById('formImages').addEventListener('change', (e) => handleFileChange(e, 'formImagePreview'));
+
+        // Handle form submission
+        document.getElementById('chequeForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+            showMessage('Submitting data...', 'loading');
+
+            const formData = new FormData(this);
+            const payload = {};
+
+            // Get text fields
+            payload.date = formData.get('date');
+            payload.dealerName = formData.get('dealerName');
+            payload.marketingPerson = formData.get('marketingPerson');
+
+            // Get dynamic cheque numbers
+            payload.chequeNumbers = [];
+            for (let i = 1; i <= chequeFieldCount; i++) {
+                const chequeNum = formData.get(`chequeNumber_${i}`);
+                if (chequeNum) { // Only include visible/filled ones
+                    payload.chequeNumbers.push(chequeNum);
+                }
+            }
+
+            // Handle image files
+            payload.chequeImages = [];
+            const chequeImageInput = document.getElementById('chequeImages');
+            for (const file of chequeImageInput.files) {
+                try {
+                    const base64 = await readFileAsBase64(file);
+                    payload.chequeImages.push({
+                        fileName: file.name,
+                        fileType: file.type,
+                        base64Data: base64
+                    });
+                } catch (error) {
+                    console.error('Error reading cheque image file:', error);
+                    showMessage('Error reading cheque image file. Please try again.', 'error');
+                    return;
+                }
+            }
+
+            payload.formImages = [];
+            const formImageInput = document.getElementById('formImages');
+            for (const file of formImageInput.files) {
+                try {
+                    const base64 = await readFileAsBase64(file);
+                    payload.formImages.push({
+                        fileName: file.name,
+                        fileType: file.type,
+                        base64Data: base64
+                    });
+                } catch (error) {
+                    console.error('Error reading form image file:', error);
+                    showMessage('Error reading form image file. Please try again.', 'error');
+                    return;
+                }
+            }
+
+            console.log('Payload to send:', payload);
+
+            // Simulate API endpoint (replace with your actual backend endpoint)
+            const apiUrl = 'https://your-backend-api.com/submit-cheque-data'; // IMPORTANT: Replace with your actual API endpoint
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                    mode: 'no-cors' // Use 'no-cors' as requested
+                });
+
+                // Note: With 'no-cors', you cannot read the response body.
+                // The 'response.ok' property will always be true, and 'response.status' will be 0.
+                // You'll need to rely on your backend to confirm successful receipt of data.
+                // For demonstration, we'll assume success if the fetch operation completes without network error.
+
+                showMessage('Form submitted successfully! (Note: Due to no-cors, response cannot be read)', 'success');
+                this.reset(); // Optionally reset the form after submission
+                document.getElementById('chequeImagePreview').innerHTML = '';
+                document.getElementById('formImagePreview').innerHTML = '';
+                // Reset dynamic fields to initial state
+                document.getElementById('chequeNumbersContainer').innerHTML = `
+                    <div class="flex items-center gap-4 cheque-input-group">
+                        <label for="chequeNumber_1" class="w-32 text-dark-blue">Cheque Number 1:</label>
+                        <input type="text" id="chequeNumber_1" name="chequeNumber_1" class="form-input flex-grow" placeholder="Enter Cheque Number" required>
+                        <button type="button" class="btn btn-danger remove-cheque-btn hidden" onclick="removeChequeField(this)">Remove</button>
+                    </div>
+                `;
+                chequeFieldCount = 1;
+                updateRemoveButtonsVisibility();
+
+            } catch (error) {
+                console.error('Submission error:', error);
+                showMessage('An error occurred during submission. Please check your network and try again.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
