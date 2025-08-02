@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dealer Cheque Data</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #1a237e;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .filters {
+            display: flex;
+            justify-content: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filters input, .filters select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .filters input:focus, .filters select:focus {
+            outline: none;
+            border-color: #1a237e;
+            box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.2);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        thead {
+            background-color: #1a237e;
+            color: #fff;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            cursor: pointer;
+            position: sticky;
+            top: 0;
+            background-color: #1a237e;
+            user-select: none;
+        }
+
+        th:hover {
+            background-color: #2c387e;
+        }
+
+        th.sorted-asc::after {
+            content: ' ▲';
+            font-size: 12px;
+        }
+
+        th.sorted-desc::after {
+            content: ' ▼';
+            font-size: 12px;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .loading, .error {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #555;
+        }
+
+        .cheque-links a {
+            display: inline-block;
+            margin-right: 5px;
+            color: #1a237e;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .cheque-links a:hover {
+            color: #4a5499;
+            text-decoration: underline;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Dealer Cheque Data</h1>
+
+    <div class="filters">
+        <input type="text" id="dealerNameFilter" placeholder="Filter by Dealer Name">
+        <input type="text" id="chequeNumberFilter" placeholder="Filter by Cheque Number">
+        <input type="text" id="dateFilter" placeholder="Filter by Date (YYYY-MM-DD)">
+    </div>
+
+    <div class="table-container">
+        <div id="status" class="loading">Loading data...</div>
+        <table id="dataTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th data-column="date">Date</th>
+                    <th data-column="dealerName">Dealer Name</th>
+                    <th data-column="chequeNumbers">Cheque Numbers</th>
+                    <th data-column="chequeImageUrls">Cheque Images</th>
+                    <th data-column="formImageUrl">Form Image</th>
+                </tr>
+            </thead>
+            <tbody id="dataTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxJzpaBBHoa6-sFRn13MlSVH1ACMF2x6-21l6xKdfsnxCFEcar0VA1pzndSAn0rDIDe/exec";
+
+    let originalData = [];
+    let currentData = [];
+    let sortColumn = null;
+    let sortDirection = 'asc';
+
+    const statusDiv = document.getElementById('status');
+    const dataTable = document.getElementById('dataTable');
+    const dataTableBody = document.getElementById('dataTableBody');
+
+    const dealerNameFilterInput = document.getElementById('dealerNameFilter');
+    const chequeNumberFilterInput = document.getElementById('chequeNumberFilter');
+    const dateFilterInput = document.getElementById('dateFilter');
+
+    // Function to fetch data from the API
+    async function fetchData() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            originalData = data.map(item => ({
+                ...item,
+                chequeImageUrls: typeof item.chequeImageUrls === 'string'
+                    ? item.chequeImageUrls.split(/\s+/).filter(Boolean)
+                    : item.chequeImageUrls,
+                chequeNumbers: typeof item.chequeNumbers === 'string'
+                    ? item.chequeNumbers.split(', ').map(n => n.trim())
+                    : [item.chequeNumbers].filter(Boolean),
+                // Normalize date to a more readable format for display
+                displayDate: item.date ? new Date(item.date).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                }) : 'N/A'
+            }));
+
+            currentData = [...originalData];
+            renderTable(currentData);
+            statusDiv.style.display = 'none';
+            dataTable.style.display = 'table';
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            statusDiv.textContent = 'Failed to load data.';
+            statusDiv.className = 'error';
+        }
+    }
+
+    // Function to render the table rows
+    function renderTable(data) {
+        dataTableBody.innerHTML = '';
+        if (data.length === 0) {
+            dataTableBody.innerHTML = '<tr><td colspan="5" class="no-data">No data found.</td></tr>';
+            return;
+        }
+
+        data.forEach(item => {
+            const row = document.createElement('tr');
+
+            const dateCell = document.createElement('td');
+            dateCell.textContent = item.displayDate;
+            row.appendChild(dateCell);
+
+            const dealerNameCell = document.createElement('td');
+            dealerNameCell.textContent = item.dealerName;
+            row.appendChild(dealerNameCell);
+
+            const chequeNumbersCell = document.createElement('td');
+            chequeNumbersCell.textContent = Array.isArray(item.chequeNumbers) ? item.chequeNumbers.join(', ') : item.chequeNumbers;
+            row.appendChild(chequeNumbersCell);
+
+            const chequeImagesCell = document.createElement('td');
+            chequeImagesCell.className = 'cheque-links';
+            if (Array.isArray(item.chequeImageUrls) && item.chequeImageUrls.length > 0) {
+                item.chequeImageUrls.forEach((url, index) => {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    link.textContent = `Cheque ${index + 1}`;
+                    chequeImagesCell.appendChild(link);
+                });
+            } else {
+                chequeImagesCell.textContent = 'N/A';
+            }
+            row.appendChild(chequeImagesCell);
+
+            const formImageCell = document.createElement('td');
+            if (item.formImageUrl) {
+                const link = document.createElement('a');
+                link.href = item.formImageUrl;
+                link.target = '_blank';
+                link.textContent = 'View Form';
+                formImageCell.appendChild(link);
+            } else {
+                formImageCell.textContent = 'N/A';
+            }
+            row.appendChild(formImageCell);
+
+            dataTableBody.appendChild(row);
+        });
+    }
+
+    // Function to handle sorting
+    function sortTable(column) {
+        const header = document.querySelector(`th[data-column="${column}"]`);
+
+        // Reset previous sort classes
+        document.querySelectorAll('th').forEach(th => {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+        });
+
+        if (sortColumn === column) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortColumn = column;
+            sortDirection = 'asc';
+        }
+
+        // Add new sort class
+        header.classList.add(`sorted-${sortDirection}`);
+
+        currentData.sort((a, b) => {
+            const valA = a[column] || '';
+            const valB = b[column] || '';
+
+            if (column === 'date') {
+                const dateA = new Date(valA);
+                const dateB = new Date(valB);
+                if (dateA.toString() === 'Invalid Date') return 1;
+                if (dateB.toString() === 'Invalid Date') return -1;
+                return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+            } else {
+                if (typeof valA === 'string' && typeof valB === 'string') {
+                    return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            }
+        });
+
+        renderTable(currentData);
+    }
+
+    // Function to handle filtering
+    function filterData() {
+        const dealerName = dealerNameFilterInput.value.toLowerCase();
+        const chequeNumber = chequeNumberFilterInput.value.toLowerCase();
+        const date = dateFilterInput.value.toLowerCase();
+
+        currentData = originalData.filter(item => {
+            const matchesDealer = item.dealerName.toLowerCase().includes(dealerName);
+            const matchesChequeNumber = Array.isArray(item.chequeNumbers) 
+                ? item.chequeNumbers.some(num => String(num).toLowerCase().includes(chequeNumber))
+                : String(item.chequeNumbers).toLowerCase().includes(chequeNumber);
+            const matchesDate = item.date ? item.date.toLowerCase().includes(date) : false;
+
+            return matchesDealer && matchesChequeNumber && matchesDate;
+        });
+
+        // Re-apply sorting after filtering
+        if (sortColumn) {
+            sortTable(sortColumn);
+        } else {
+            renderTable(currentData);
+        }
+    }
+
+    // Event listeners
+    document.querySelectorAll('th[data-column]').forEach(header => {
+        header.addEventListener('click', () => {
+            sortTable(header.getAttribute('data-column'));
+        });
+    });
+
+    dealerNameFilterInput.addEventListener('input', filterData);
+    chequeNumberFilterInput.addEventListener('input', filterData);
+    dateFilterInput.addEventListener('input', filterData);
+
+    // Initial data fetch
+    fetchData();
+</script>
+
+</body>
+</html>
