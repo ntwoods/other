@@ -40,7 +40,6 @@
       const picker = document.createElement('input');
       picker.type = 'file';
       picker.accept = 'image/*';
-      picker.capture = 'environment'; // prefers rear camera on mobile
 
       picker.onchange = () => {
         const file = picker.files?.[0];
