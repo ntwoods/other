@@ -42,7 +42,7 @@
     let allCodes = [], availableCodes = [];
 
     async function loadCodes() {
-      const res = await fetch('YOUR_WEB_APP_URL?action=getAvailableCodes');
+      const res = await fetch('https://script.google.com/macros/s/AKfycbzA5D4bYw0aTBI-O-nM6J4gD9pcvMy7KfVMKQICUpIDuNJUNiyMlYzVasqhfOTgVRAZsA/exec?action=getAvailableCodes');
       const data = await res.json();
       availableCodes = data.available || [];
       allCodes = [...availableCodes];
