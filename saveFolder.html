@@ -7,8 +7,9 @@
   <style>
     body { font-family: system-ui, Arial, sans-serif; background:#f7faff; margin:0; padding:20px; display:flex; flex-direction:column; align-items:center; }
     h2 { color:#1e3a8a; margin:8px 0 16px; }
-    input, button { width:100%; max-width:420px; padding:12px; margin:8px 0; border-radius:10px; font-size:16px; }
-    input { border:1px solid #cbd5e1; }
+    input, select, button { width:100%; max-width:420px; padding:10px; margin:8px 0; border-radius:8px; font-size:16px; }
+    input, select { border:1px solid #cbd5e1; }
+    select { height:180px; overflow:auto; }
     button { border:none; background:#1e3a8a; color:#fff; }
     button:disabled { opacity:0.6; }
     .preview { width:100%; max-width:420px; margin:6px 0; }
@@ -20,33 +21,63 @@
 <body>
   <h2>Submit Folder Code</h2>
 
-  <input id="folderCode" type="text" placeholder="Type Folder Code Here" autocomplete="off" />
+  <!-- Searchable Dropdown -->
+  <input id="folderSearch" type="text" placeholder="Search Folder Code..." oninput="filterCodes()" />
+  <select id="folderCode" size="8"></select>
 
+  <!-- Image Previews -->
   <div class="preview" id="preview1"></div>
   <div class="preview" id="preview2"></div>
 
-  <button type="button" onclick="captureImage(1)">Capture First Image</button>
-  <button type="button" onclick="captureImage(2)">Capture Second Image</button>
+  <!-- Buttons -->
+  <button type="button" onclick="captureImage(1)">Capture / Select First Image</button>
+  <button type="button" onclick="captureImage(2)">Capture / Select Second Image</button>
 
   <button id="submitBtn" type="button" onclick="submitData()">Submit</button>
 
   <div id="toast" class="toast"></div>
 
   <script>
-    let image1 = null;
-    let image2 = null;
+    let image1 = null, image2 = null;
+    let allCodes = [], availableCodes = [];
+
+    async function loadCodes() {
+      const res = await fetch('YOUR_WEB_APP_URL?action=getAvailableCodes');
+      const data = await res.json();
+      availableCodes = data.available || [];
+      allCodes = [...availableCodes];
+      renderCodes();
+    }
+
+    function renderCodes(filter = '') {
+      const select = document.getElementById('folderCode');
+      select.innerHTML = '';
+      availableCodes
+        .filter(code => code.toLowerCase().includes(filter.toLowerCase()))
+        .forEach(code => {
+          const opt = document.createElement('option');
+          opt.value = code;
+          opt.textContent = code;
+          select.appendChild(opt);
+        });
+    }
+
+    function filterCodes() {
+      const q = document.getElementById('folderSearch').value.trim();
+      renderCodes(q);
+    }
 
     function captureImage(n) {
       const picker = document.createElement('input');
       picker.type = 'file';
-      picker.accept = 'image/*';
+      picker.accept = 'image/*'; // gallery OR camera (user choice)
 
       picker.onchange = () => {
         const file = picker.files?.[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = () => {
-          const base64 = reader.result; // data URL (e.g., data:image/jpeg;base64,....)
+          const base64 = reader.result;
           if (confirm("Use this picture? Click Cancel to retry.")) {
             if (n === 1) {
               image1 = base64;
@@ -61,7 +92,6 @@
         };
         reader.readAsDataURL(file);
       };
-
       picker.click();
     }
 
@@ -74,9 +104,10 @@
     }
 
     async function submitData() {
-      const code = document.getElementById('folderCode').value.trim();
-      if (!code || !image1 || !image2) {
-        alert('Please enter Folder Code and capture both images.');
+      const select = document.getElementById('folderCode');
+      const folderCode = select.value;
+      if (!folderCode || !image1 || !image2) {
+        alert('Please select Folder Code and capture/select both images.');
         return;
       }
 
@@ -84,24 +115,29 @@
       toast('Submitting...', true);
 
       try {
-        await fetch('https://script.google.com/macros/s/AKfycbzA5D4bYw0aTBI-O-nM6J4gD9pcvMy7KfVMKQICUpIDuNJUNiyMlYzVasqhfOTgVRAZsA/exec', {
+        await fetch('YOUR_WEB_APP_URL', {
           method: 'POST',
-          mode: 'no-cors',                  // per your requirement
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ folderCode: code, image1, image2 }),
+          body: JSON.stringify({ folderCode, image1, image2 }),
         });
 
         toast('✅ Successfully Submitted!');
-        document.getElementById('folderCode').value = '';
+        // Reset UI
         image1 = image2 = null;
         document.getElementById('preview1').innerHTML = '';
         document.getElementById('preview2').innerHTML = '';
+        availableCodes = availableCodes.filter(code => code !== folderCode);
+        renderCodes(document.getElementById('folderSearch').value.trim());
       } catch (e) {
         alert('Submission failed. Please try again.');
       } finally {
         document.getElementById('submitBtn').disabled = false;
       }
     }
+
+    // Load available codes on page load
+    loadCodes();
   </script>
 </body>
 </html>
