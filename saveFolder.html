@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Folder Code Capture</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; background:#f7faff; margin:0; padding:20px; display:flex; flex-direction:column; align-items:center; }
+    h2 { color:#1e3a8a; margin:8px 0 16px; }
+    input, button { width:100%; max-width:420px; padding:12px; margin:8px 0; border-radius:10px; font-size:16px; }
+    input { border:1px solid #cbd5e1; }
+    button { border:none; background:#1e3a8a; color:#fff; }
+    button:disabled { opacity:0.6; }
+    .preview { width:100%; max-width:420px; margin:6px 0; }
+    img { width:100%; border-radius:10px; margin-top:6px; }
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); padding:12px 16px; border-radius:10px; color:#fff; background:#4caf50; display:none; z-index:1000; }
+    .loading { background:#facc15; color:#111827; }
+  </style>
+</head>
+<body>
+  <h2>Submit Folder Code</h2>
+
+  <input id="folderCode" type="text" placeholder="Type Folder Code Here" autocomplete="off" />
+
+  <div class="preview" id="preview1"></div>
+  <div class="preview" id="preview2"></div>
+
+  <button type="button" onclick="captureImage(1)">Capture First Image</button>
+  <button type="button" onclick="captureImage(2)">Capture Second Image</button>
+
+  <button id="submitBtn" type="button" onclick="submitData()">Submit</button>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let image1 = null;
+    let image2 = null;
+
+    function captureImage(n) {
+      const picker = document.createElement('input');
+      picker.type = 'file';
+      picker.accept = 'image/*';
+      picker.capture = 'environment'; // prefers rear camera on mobile
+
+      picker.onchange = () => {
+        const file = picker.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result; // data URL (e.g., data:image/jpeg;base64,....)
+          if (confirm("Use this picture? Click Cancel to retry.")) {
+            if (n === 1) {
+              image1 = base64;
+              document.getElementById('preview1').innerHTML = `<img src="${base64}" alt="First Image">`;
+            } else {
+              image2 = base64;
+              document.getElementById('preview2').innerHTML = `<img src="${base64}" alt="Second Image">`;
+            }
+          } else {
+            captureImage(n);
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+
+      picker.click();
+    }
+
+    function toast(msg, loading=false) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (loading ? ' loading' : '');
+      t.style.display = 'block';
+      if (!loading) setTimeout(() => (t.style.display = 'none'), 2500);
+    }
+
+    async function submitData() {
+      const code = document.getElementById('folderCode').value.trim();
+      if (!code || !image1 || !image2) {
+        alert('Please enter Folder Code and capture both images.');
+        return;
+      }
+
+      document.getElementById('submitBtn').disabled = true;
+      toast('Submitting...', true);
+
+      try {
+        await fetch('https://script.google.com/macros/s/AKfycbzA5D4bYw0aTBI-O-nM6J4gD9pcvMy7KfVMKQICUpIDuNJUNiyMlYzVasqhfOTgVRAZsA/exec', {
+          method: 'POST',
+          mode: 'no-cors',                  // per your requirement
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ folderCode: code, image1, image2 }),
+        });
+
+        toast('✅ Successfully Submitted!');
+        document.getElementById('folderCode').value = '';
+        image1 = image2 = null;
+        document.getElementById('preview1').innerHTML = '';
+        document.getElementById('preview2').innerHTML = '';
+      } catch (e) {
+        alert('Submission failed. Please try again.');
+      } finally {
+        document.getElementById('submitBtn').disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
